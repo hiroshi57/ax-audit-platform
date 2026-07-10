@@ -1,0 +1,18 @@
+# AX診断 スコアリング重み(調整可能・根拠は docs/scoring_spec.md)
+axes:
+  automation_fitness:      # 高いほど良い
+    routineness: 0.4        # 定型度(自己評価)
+    data_availability: 0.35 # データ入手性
+    decision_simplicity: 0.25
+  feasibility:             # 高いほど良い
+    api: 0.4                # 既存ツールAPI有無
+    data_format: 0.35       # データ形式の構造化度
+    integrations: 0.25      # 連携先システム数(少ないほど易)
+  risk:                    # 高いほど悪い(優先度では減算)
+    error_tolerance: 0.5    # 誤り許容度の低さ
+    compliance: 0.5         # コンプラ機微度
+priority:
+  impact: 0.35
+  fitness: 0.25
+  feasibility: 0.25
+  risk: 0.15
