@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AX診断プラットフォーム(スタンドアロン)</title>
+  <!-- ビルド不要: React CDN。埋め込みデモデータで動作(バックエンド不要) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body{font-family:system-ui,sans-serif;background:#f7f8fa;margin:0;padding:24px;color:#1a1a2e}
+    .wrap{max-width:820px;margin:0 auto}
+    h1{color:#1a5fb4;font-size:22px} h2{font-size:16px;border-left:4px solid #1a5fb4;padding-left:8px}
+    .card{background:#fff;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+    table{border-collapse:collapse;width:100%;margin:8px 0}
+    th,td{border:1px solid #dde;padding:6px 8px;text-align:left} th{background:#eef2fb}
+    .quadrant{background:#eef2fb;border-radius:8px;padding:2px 8px} .note{color:#a15;font-size:12px}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+    // 埋め込みデモデータ(バックエンドの診断結果と同形式)
+    const DEMO = {
+      scores: [
+        {name:"レポート作成", priority:73.5, impact:92, feasibility:95, quadrant:"今すぐPoC"},
+        {name:"広告運用", priority:66.9, impact:100, feasibility:90, quadrant:"今すぐPoC"},
+        {name:"SEO記事制作", priority:49.4, impact:100, feasibility:45, quadrant:"重点投資"},
+      ],
+      proposals: [
+        {task:"レポート作成", solution_type:"業務自動化", poc_weeks:4, effort_days_min:10, effort_days_max:25,
+         expected_reduction_pct:60, expected_reduction_note:"※削減率は想定値であり実測ではありません。"},
+        {task:"SEO記事制作", solution_type:"生成支援", poc_weeks:4, effort_days_min:8, effort_days_max:20,
+         expected_reduction_pct:45, expected_reduction_note:"※削減率は想定値であり実測ではありません。"},
+      ],
+    };
+    function App(){
+      return (
+        <div className="wrap">
+          <h1>AX診断プラットフォーム <small style={{fontSize:12,color:"#889"}}>(スタンドアロン・デモ)</small></h1>
+          <div className="card">
+            <h2>優先度ランキング</h2>
+            <table><thead><tr><th>業務</th><th>優先度</th><th>影響</th><th>容易性</th><th>象限</th></tr></thead>
+              <tbody>{DEMO.scores.map(s=>(
+                <tr key={s.name}><td>{s.name}</td><td>{s.priority}</td><td>{s.impact}</td>
+                  <td>{s.feasibility}</td><td><span className="quadrant">{s.quadrant}</span></td></tr>))}
+              </tbody></table>
+            <h2>改善提案 / PoC見積</h2>
+            <table><thead><tr><th>業務</th><th>ソリューション</th><th>PoC</th><th>工数</th><th>期待削減率</th></tr></thead>
+              <tbody>{DEMO.proposals.map(p=>(
+                <tr key={p.task}><td>{p.task}</td><td>{p.solution_type}</td><td>{p.poc_weeks}週</td>
+                  <td>{p.effort_days_min}〜{p.effort_days_max}人日</td>
+                  <td>{p.expected_reduction_pct}%<div className="note">{p.expected_reduction_note}</div></td></tr>))}
+              </tbody></table>
+          </div>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body>
+</html>

@@ -24,11 +24,31 @@ python demo.py          # スコアリング + 提案/PoC見積自動生成
 python -m pytest -q     # テスト12件
 ```
 
+## 本番構成（SQLite + HTMLレポート + Vite 2画面）
+
+- **DB**: `backend/db/`（SQLite・標準ライブラリ）。全クエリ `tenant_id` 強制フィルタで**テナント分離**（越境アクセス不可を自動テスト）
+- **API**: `backend/api/main.py`（FastAPI）。clients / survey / diagnose / report(HTML) を提供
+- **HTMLレポート**: `backend/report/builder.py`（ロゴ/配色差し替え可、全ROI数値に「想定値」注記、XSSエスケープ）
+- **フロント**: `frontend/`（React + Vite）。**クライアント回答**画面＋**コンサル管理**画面の2枚。
+  ビルド不要で見たい場合は `frontend/standalone.html` をブラウザで開く
+- **CI**: `.github/workflows/ci.yml`（push/PRで pytest 自動実行）
+
+```bash
+# バックエンド
+uvicorn backend.api.main:app --reload
+# フロント(開発)
+cd frontend && npm install && npm run dev          # http://localhost:5173
+# フロント(ビルド不要デモ)
+open frontend/standalone.html
+python -m pytest -q                                 # テスト19件(DB/テナント分離/レポート/API E2E含む)
+```
+
 ## フォルダ構成
 
 ```
-backend/{scoring✅, survey✅, proposal✅, api, report, funnel, db}
-frontend/{client-app, console-app}          # 未(承認後)
-tests/{test_scoring✅, test_proposal_survey✅, test_tenancy, test_disclaimer}
+backend/{scoring✅, survey✅, proposal✅, db✅, report✅, api✅, funnel}
+frontend/{index.html, vite.config.js, src/{App,api,screens/*}✅, standalone.html✅}
+tests/{test_scoring✅, test_proposal_survey✅, test_db_report_api✅}
+.github/workflows/ci.yml✅
 docs/{scoring_spec.md✅, operation_playbook.md}
 ```
