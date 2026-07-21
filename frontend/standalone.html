@@ -7,7 +7,7 @@
   <!-- ビルド不要: React CDN。埋め込みデモデータで動作(バックエンド不要) -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
   <style>
     body{font-family:system-ui,sans-serif;background:#f7f8fa;margin:0;padding:24px;color:#1a1a2e}
     .wrap{max-width:820px;margin:0 auto}
@@ -31,7 +31,7 @@
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel" data-presets="react">
+  <script type="text/plain" id="__jsx">
     // 埋め込みデモデータ(バックエンドの診断結果と同形式)
     const DEMO = {
       scores: [
@@ -70,5 +70,5 @@
     }
     ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   </script>
-</body>
+<script>(function(){var src=document.getElementById("__jsx").textContent;var out=Babel.transform(src,{presets:[["react",{runtime:"classic"}]]}).code;(0,eval)(out);})();</script></body>
 </html>
