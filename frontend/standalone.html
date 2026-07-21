@@ -1,74 +1,130 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AX診断プラットフォーム(スタンドアロン)</title>
-  <!-- ビルド不要: React CDN。埋め込みデモデータで動作(バックエンド不要) -->
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AX診断プラットフォーム</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
   <style>
-    body{font-family:system-ui,sans-serif;background:#f7f8fa;margin:0;padding:24px;color:#1a1a2e}
-    .wrap{max-width:820px;margin:0 auto}
-    h1{color:#1a5fb4;font-size:22px} h2{font-size:16px;border-left:4px solid #1a5fb4;padding-left:8px}
-    .card{background:#fff;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-    table{border-collapse:collapse;width:100%;margin:8px 0}
-    th,td{border:1px solid #dde;padding:6px 8px;text-align:left} th{background:#eef2fb}
-    .quadrant{background:#eef2fb;border-radius:8px;padding:2px 8px} .note{color:#a15;font-size:12px}
-  
-    /* --- レスポンシブ強化(スマホ最適化) --- */
-    *{box-sizing:border-box} img,pre,table{max-width:100%}
-    .metrics{flex-wrap:wrap}
-    @media (max-width:640px){
-      body{padding:14px} .wrap{max-width:100%}
-      h1{font-size:19px} nav button{margin-bottom:6px}
-      .metrics{flex-direction:column;gap:8px} .metric{width:100%}
-      table{display:block;overflow-x:auto;white-space:nowrap;font-size:13px}
-      pre{overflow-x:auto} input,textarea,select{max-width:100%;width:100%}
-    }
-</style>
+    body{font-family:system-ui,sans-serif;background:#f5f7f9;margin:0;padding:24px;color:#152238}
+    .wrap{max-width:880px;margin:0 auto} h1{color:#1a5fb4;font-size:22px}
+    h2{font-size:16px;margin:2px 0 8px} .sub{color:#8a97a6;font-size:12px}
+    .card{background:#fff;border-radius:14px;padding:18px;margin:14px 0;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+    table{border-collapse:collapse;width:100%;font-size:13px} th,td{border:1px solid #e3e8ee;padding:8px;text-align:left} th{background:#eef2fb}
+    tr.sel{background:#eef6ff} tr.clk{cursor:pointer} tr.clk:hover{background:#f4f8ff}
+    .pill{padding:2px 9px;border-radius:12px;font-size:11px;font-weight:bold;white-space:nowrap}
+    .kv{display:flex;flex-wrap:wrap;gap:8px 22px;margin:8px 0} .kv div{font-size:13px}
+    .kv b{color:#1a5fb4}
+    .calc{background:#f7faff;border:1px solid #dbe6f5;border-radius:10px;padding:12px;font-size:13px;line-height:1.9}
+    .calc .eq{font-family:ui-monospace,monospace;color:#0f3d78}
+    .big{font-size:22px;font-weight:bold;color:#17a673}
+    .ai{background:linear-gradient(135deg,#eef4ff,#eafaf3);border-left:4px solid #1a5fb4;border-radius:10px;padding:14px;font-size:14px;line-height:1.7}
+    .note{color:#b5651d;font-size:12px} .muted{color:#8a97a6}
+    @media(max-width:640px){body{padding:14px} .wrap{max-width:100%} h1{font-size:19px}
+      table{display:block;overflow-x:auto;white-space:nowrap;font-size:12px}}
+  </style>
 </head>
-<body>
-  <div id="root"></div>
-  <script type="text/plain" id="__jsx">
-    // 埋め込みデモデータ(バックエンドの診断結果と同形式)
-    const DEMO = {
-      scores: [
-        {name:"レポート作成", priority:73.5, impact:92, feasibility:95, quadrant:"今すぐPoC"},
-        {name:"広告運用", priority:66.9, impact:100, feasibility:90, quadrant:"今すぐPoC"},
-        {name:"SEO記事制作", priority:49.4, impact:100, feasibility:45, quadrant:"重点投資"},
-      ],
-      proposals: [
-        {task:"レポート作成", solution_type:"業務自動化", poc_weeks:4, effort_days_min:10, effort_days_max:25,
-         expected_reduction_pct:60, expected_reduction_note:"※削減率は想定値であり実測ではありません。"},
-        {task:"SEO記事制作", solution_type:"生成支援", poc_weeks:4, effort_days_min:8, effort_days_max:20,
-         expected_reduction_pct:45, expected_reduction_note:"※削減率は想定値であり実測ではありません。"},
-      ],
-    };
-    function App(){
-      return (
-        <div className="wrap">
-          <h1>AX診断プラットフォーム <small style={{fontSize:12,color:"#889"}}>(スタンドアロン・デモ)</small></h1>
-          <div className="card">
-            <h2>優先度ランキング</h2>
-            <table><thead><tr><th>業務</th><th>優先度</th><th>影響</th><th>容易性</th><th>象限</th></tr></thead>
-              <tbody>{DEMO.scores.map(s=>(
-                <tr key={s.name}><td>{s.name}</td><td>{s.priority}</td><td>{s.impact}</td>
-                  <td>{s.feasibility}</td><td><span className="quadrant">{s.quadrant}</span></td></tr>))}
-              </tbody></table>
-            <h2>改善提案 / PoC見積</h2>
-            <table><thead><tr><th>業務</th><th>ソリューション</th><th>PoC</th><th>工数</th><th>期待削減率</th></tr></thead>
-              <tbody>{DEMO.proposals.map(p=>(
-                <tr key={p.task}><td>{p.task}</td><td>{p.solution_type}</td><td>{p.poc_weeks}週</td>
-                  <td>{p.effort_days_min}〜{p.effort_days_max}人日</td>
-                  <td>{p.expected_reduction_pct}%<div className="note">{p.expected_reduction_note}</div></td></tr>))}
-              </tbody></table>
-          </div>
-        </div>
-      );
-    }
-    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
-  </script>
-<script>(function(){var src=document.getElementById("__jsx").textContent;var out=Babel.transform(src,{presets:[["react",{runtime:"classic"}]]}).code;(0,eval)(out);})();</script></body>
-</html>
+<body><div id="root"></div>
+<script type="text/plain" id="__jsx">
+const RATE=3000; // 時給(円) — 管理画面の単価設定に相当
+const SOL_RED={ "業務自動化":60, "エージェント":50, "生成支援":45, "RAG検索":40 }; // 類型別 想定削減率(%)
+const TASKS=[
+  {name:"レポート作成", freq:20, hours:2.0, people:4, feas:95, api:"あり", data:"構造化", integ:2, sol:"業務自動化", effMin:10, effMax:25},
+  {name:"広告運用",   freq:60, hours:1.0, people:3, feas:90, api:"あり", data:"構造化", integ:3, sol:"エージェント", effMin:25, effMax:60},
+  {name:"SEO記事制作", freq:15, hours:4.0, people:3, feas:45, api:"一部", data:"非構造", integ:1, sol:"生成支援", effMin:8, effMax:20},
+  {name:"入稿",       freq:40, hours:0.5, people:2, feas:58, api:"一部", data:"半構造", integ:2, sol:"業務自動化", effMin:10, effMax:25},
+  {name:"SNS運用",    freq:30, hours:1.0, people:2, feas:48, api:"一部", data:"半構造", integ:2, sol:"生成支援", effMin:8, effMax:20},
+];
+function enrich(t){
+  const H=t.freq*t.hours*t.people;            // 月間工数(h)
+  const impact=Math.min(100, Math.round(Math.log1p(H)/Math.log1p(400)*100)); // 対数正規化
+  const red=SOL_RED[t.sol];
+  const savedM=H*red/100, savedY=savedM*12, yen=Math.round(savedY*RATE/10000);
+  const priority=(0.5*impact+0.5*t.feas);
+  const quad = impact>=50 ? (t.feas>=50?"今すぐPoC":"重点投資") : (t.feas>=50?"クイックウィン":"見送り候補");
+  return {...t, H, impact, red, savedM, savedY, yen, priority, quad};
+}
+const DATA=TASKS.map(enrich).sort((a,b)=>b.priority-a.priority);
+const QCOLOR={"今すぐPoC":"#17a673","重点投資":"#f0a500","クイックウィン":"#4c8bf5","見送り候補":"#9aa5b1"};
+
+function Quadrant({data, sel, onPick}){
+  const W=340,H=280,pad=40;
+  const x=v=>pad+v/100*(W-2*pad), y=v=>H-pad-v/100*(H-2*pad);
+  return (<svg width="100%" viewBox={"0 0 "+W+" "+H} style={{maxWidth:440}}>
+    <rect x={x(50)} y={pad} width={W-pad-x(50)} height={y(50)-pad} fill="#eafaf3"/>
+    <line x1={x(50)} y1={pad} x2={x(50)} y2={H-pad} stroke="#cdd6df" strokeDasharray="4 3"/>
+    <line x1={pad} y1={y(50)} x2={W-pad} y2={y(50)} stroke="#cdd6df" strokeDasharray="4 3"/>
+    <text x={W-pad} y={pad+12} textAnchor="end" fontSize="10" fill="#17a673" fontWeight="bold">今すぐPoC</text>
+    <text x={pad+2} y={pad+12} fontSize="10" fill="#f0a500">重点投資</text>
+    <text x={W-pad} y={H-pad-4} textAnchor="end" fontSize="10" fill="#4c8bf5">クイックウィン</text>
+    <text x={pad+2} y={H-pad-4} fontSize="10" fill="#9aa5b1">見送り</text>
+    <text x={W/2} y={H-6} textAnchor="middle" fontSize="10" fill="#556">実装容易性 →</text>
+    <text x={12} y={H/2} fontSize="10" fill="#556" transform={"rotate(-90 12 "+(H/2)+")"}>← 業務インパクト</text>
+    {data.map((d,i)=>{const r=8+d.H/400*22; const on=i===sel;
+      return (<g key={i} style={{cursor:"pointer"}} onClick={()=>onPick(i)}>
+        <circle cx={x(d.feas)} cy={y(d.impact)} r={r} fill={QCOLOR[d.quad]} opacity={on?0.95:0.45}
+          stroke={on?"#0f3d78":"none"} strokeWidth="2"/>
+        <text x={x(d.feas)} y={y(d.impact)-r-3} textAnchor="middle" fontSize="10" fontWeight={on?"bold":"normal"} fill="#152238">{d.name}</text>
+      </g>);})}
+  </svg>);
+}
+
+function App(){
+  const [sel,setSel]=React.useState(0);
+  const d=DATA[sel];
+  const topPoC=DATA.filter(t=>t.quad==="今すぐPoC");
+  return (<div className="wrap">
+    <h1>AX診断プラットフォーム <span className="sub">業務のAI導入余地を定量診断</span></h1>
+    <div className="sub">対象: サンプル企業(デジタルマーケ部門) / 時給換算 {RATE.toLocaleString()}円</div>
+
+    <div className="card" style={{display:"flex",gap:20,flexWrap:"wrap",alignItems:"flex-start"}}>
+      <div><h2>優先度マップ（影響 × 容易性）</h2>
+        <p className="sub">右上＝影響も容易性も高い＝<b style={{color:"#17a673"}}>今すぐPoC</b>。円の大きさ＝月間工数。クリックで詳細。</p>
+        <Quadrant data={DATA} sel={sel} onPick={setSel}/></div>
+      <div style={{flex:1,minWidth:250}}>
+        <div className="ai"><b>🤖 AI講評</b><br/>
+          今すぐPoC候補は <b>{topPoC.map(t=>t.name).join("・")}</b>。最優先は <b>{DATA[0].name}</b>（優先度{DATA[0].priority.toFixed(0)}）で、
+          月間{DATA[0].H}時間の作業を{DATA[0].sol}で約{DATA[0].red}%削減 → <b>年 約{DATA[0].yen}万円</b>の削減見込み。
+          まず{DATA[0].name}を{DATA[0].effMin}〜{DATA[0].effMax}人日のPoCで実証するのが投資対効果最大です。</div>
+      </div>
+    </div>
+
+    <div className="card">
+      <h2>優先度ランキング（クリックで根拠を表示）</h2>
+      <table><thead><tr><th>業務</th><th>優先度</th><th>影響</th><th>容易性</th><th>月間工数</th><th>判定</th></tr></thead>
+        <tbody>{DATA.map((t,i)=>(<tr key={i} className={"clk"+(i===sel?" sel":"")} onClick={()=>setSel(i)}>
+          <td><b>{t.name}</b></td><td><b>{t.priority.toFixed(1)}</b></td><td>{t.impact}</td><td>{t.feas}</td>
+          <td>{t.H}h/月</td>
+          <td><span className="pill" style={{background:QCOLOR[t.quad]+"22",color:QCOLOR[t.quad]}}>{t.quad}</span></td></tr>))}
+        </tbody></table>
+    </div>
+
+    <div className="card">
+      <h2>「{d.name}」がなぜ {d.quad} なのか — 根拠</h2>
+      <div className="kv">
+        <div>判定ロジック: <b>影響 {d.impact}{d.impact>=50?"≥50":"<50"}</b> かつ <b>容易性 {d.feas}{d.feas>=50?"≥50":"<50"}</b> → <b style={{color:QCOLOR[d.quad]}}>{d.quad}</b></div>
+      </div>
+      <div className="kv">
+        <div>■ 影響 {d.impact} の内訳: 月間頻度 <b>{d.freq}回</b> × 1回 <b>{d.hours}h</b> × <b>{d.people}人</b> = 月間 <b>{d.H} 時間</b></div>
+      </div>
+      <div className="kv">
+        <div>■ 容易性 {d.feas} の内訳: 既存API <b>{d.api}</b> / データ形式 <b>{d.data}</b> / 連携システム <b>{d.integ}件</b></div>
+      </div>
+
+      <h3 style={{margin:"12px 0 6px"}}>削減率 {d.red}% の具体的な計算根拠</h3>
+      <div className="calc">
+        <div className="eq">現状の月間工数 = {d.freq}回 × {d.hours}h × {d.people}人 = <b>{d.H} 時間/月</b></div>
+        <div className="eq">推奨ソリューション「{d.sol}」の想定削減率 = <b>{d.red}%</b>（定型度・データ入手性から算出した類型別 想定値）</div>
+        <div className="eq">月間削減 = {d.H}h × {d.red}% = <b>{d.savedM.toFixed(0)} 時間/月</b></div>
+        <div className="eq">年間削減 = {d.savedM.toFixed(0)}h × 12 = <b>{d.savedY.toFixed(0)} 時間/年</b></div>
+        <div className="eq">金額換算(時給{RATE.toLocaleString()}円) = {d.savedY.toFixed(0)}h × {RATE.toLocaleString()}円 = <span className="big">年 約 {d.yen} 万円</span></div>
+        <div className="eq muted">PoC概算工数 = {d.effMin}〜{d.effMax} 人日</div>
+      </div>
+      <p className="note">※削減率は{d.sol}類型の「想定値」です（実測ではありません）。PoCで実測し、単価・件数は管理画面設定で調整してください。</p>
+    </div>
+  </div>);
+}
+</script>
+<script>(function(){var src=document.getElementById("__jsx").textContent;var out=Babel.transform(src,{presets:[["react",{runtime:"classic"}]]}).code;(0,eval)(out);ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));})();</script>
+</body></html>
