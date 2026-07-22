@@ -8,120 +8,133 @@
   <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
   <style>
     body{font-family:system-ui,sans-serif;background:#f5f7f9;margin:0;padding:24px;color:#152238}
-    .wrap{max-width:880px;margin:0 auto} h1{color:#1a5fb4;font-size:22px}
-    h2{font-size:16px;margin:2px 0 8px} .sub{color:#8a97a6;font-size:12px}
+    .wrap{max-width:900px;margin:0 auto} h1{color:#1a5fb4;font-size:22px}
+    h2{font-size:16px;margin:2px 0 8px} h3{font-size:14px;margin:12px 0 4px;color:#334} .sub{color:#8a97a6;font-size:12px}
     .card{background:#fff;border-radius:14px;padding:18px;margin:14px 0;box-shadow:0 2px 10px rgba(0,0,0,.06)}
-    table{border-collapse:collapse;width:100%;font-size:13px} th,td{border:1px solid #e3e8ee;padding:8px;text-align:left} th{background:#eef2fb}
-    tr.sel{background:#eef6ff} tr.clk{cursor:pointer} tr.clk:hover{background:#f4f8ff}
+    table{border-collapse:collapse;width:100%;font-size:13px} th,td{border:1px solid #e3e8ee;padding:8px;text-align:center} th{background:#eef2fb}
+    td.f,th.f{text-align:left} tr.sel{background:#eef6ff} tr.clk{cursor:pointer} tr.clk:hover{background:#f4f8ff}
     .pill{padding:2px 9px;border-radius:12px;font-size:11px;font-weight:bold;white-space:nowrap}
-    .kv{display:flex;flex-wrap:wrap;gap:8px 22px;margin:8px 0} .kv div{font-size:13px}
-    .kv b{color:#1a5fb4}
-    .calc{background:#f7faff;border:1px solid #dbe6f5;border-radius:10px;padding:12px;font-size:13px;line-height:1.9}
-    .calc .eq{font-family:ui-monospace,monospace;color:#0f3d78}
-    .big{font-size:22px;font-weight:bold;color:#17a673}
+    .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;margin:8px 0}
+    .legend b{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:middle}
+    .kv div{font-size:13px;margin:4px 0} .kv b{color:#1a5fb4}
+    .calc{background:#f7faff;border:1px solid #dbe6f5;border-radius:10px;padding:12px;font-size:13px;line-height:2}
+    .calc .eq{font-family:ui-monospace,monospace;color:#0f3d78} .big{font-size:22px;font-weight:bold;color:#17a673}
     .ai{background:linear-gradient(135deg,#eef4ff,#eafaf3);border-left:4px solid #1a5fb4;border-radius:10px;padding:14px;font-size:14px;line-height:1.7}
+    .rate{display:inline-flex;align-items:center;gap:6px;background:#eef2fb;border-radius:8px;padding:6px 10px}
+    .rate input{width:70px;border:1px solid #cdd6df;border-radius:6px;padding:4px 6px;font-size:14px;text-align:right}
     .note{color:#b5651d;font-size:12px} .muted{color:#8a97a6}
+    .split{display:flex;height:12px;border-radius:6px;overflow:hidden;background:#eef1f5;width:160px}
     @media(max-width:640px){body{padding:14px} .wrap{max-width:100%} h1{font-size:19px}
       table{display:block;overflow-x:auto;white-space:nowrap;font-size:12px}}
   </style>
 </head>
 <body><div id="root"></div>
 <script type="text/plain" id="__jsx">
-const RATE=3000; // 時給(円) — 管理画面の単価設定に相当
-const SOL_RED={ "業務自動化":60, "エージェント":50, "生成支援":45, "RAG検索":40 }; // 類型別 想定削減率(%)
+// ソリューション類型別 想定削減率(%)
+const SOL_RED={ "業務自動化":60, "エージェント":50, "生成支援":45, "RAG検索":40 };
+// 業務データ: 工数(頻度×時間×人数) と 重要度(1件の重み) を別軸で持つ
 const TASKS=[
-  {name:"レポート作成", freq:20, hours:2.0, people:4, feas:95, api:"あり", data:"構造化", integ:2, sol:"業務自動化", effMin:10, effMax:25},
-  {name:"広告運用",   freq:60, hours:1.0, people:3, feas:90, api:"あり", data:"構造化", integ:3, sol:"エージェント", effMin:25, effMax:60},
-  {name:"SEO記事制作", freq:15, hours:4.0, people:3, feas:45, api:"一部", data:"非構造", integ:1, sol:"生成支援", effMin:8, effMax:20},
-  {name:"入稿",       freq:40, hours:0.5, people:2, feas:58, api:"一部", data:"半構造", integ:2, sol:"業務自動化", effMin:10, effMax:25},
-  {name:"SNS運用",    freq:30, hours:1.0, people:2, feas:48, api:"一部", data:"半構造", integ:2, sol:"生成支援", effMin:8, effMax:20},
+  {name:"月次決算レポート", freq:1,  hours:8.0, people:2, crit:5, critWhy:"誤りが許されず経営判断に直結。頻度は月1でも重要度は最大", feas:80, api:"あり", data:"構造化", integ:2, sol:"業務自動化", effMin:12, effMax:25},
+  {name:"広告運用",       freq:60, hours:1.0, people:3, crit:3, critWhy:"日次の最適化。予算影響は中",                     feas:90, api:"あり", data:"構造化", integ:3, sol:"エージェント", effMin:25, effMax:60},
+  {name:"定例レポート作成", freq:20, hours:2.0, people:4, crit:3, critWhy:"毎週の定型作業。1件の重要度は中",               feas:95, api:"あり", data:"構造化", integ:2, sol:"業務自動化", effMin:10, effMax:25},
+  {name:"SEO記事制作",     freq:15, hours:4.0, people:3, crit:3, critWhy:"品質重視・非定型で自動化は一部",                 feas:45, api:"一部", data:"非構造", integ:1, sol:"生成支援", effMin:8, effMax:20},
+  {name:"問い合わせ一次対応", freq:200, hours:0.2, people:3, crit:2, critWhy:"件数は多いが1件は軽微",                     feas:70, api:"あり", data:"半構造", integ:2, sol:"RAG検索", effMin:15, effMax:35},
 ];
+const QCOLOR={"今すぐPoC":"#17a673","重点投資":"#f0a500","クイックウィン":"#4c8bf5","見送り候補":"#9aa5b1"};
+const QDESC={"今すぐPoC":"影響も容易性も高い→最優先","重点投資":"影響は高いが難易度も高い→計画的に","クイックウィン":"影響は小さいがすぐ実現→小さく勝つ","見送り候補":"影響も容易性も低い→後回し"};
+const maxH=Math.max(...TASKS.map(t=>t.freq*t.hours*t.people));
 function enrich(t){
-  const H=t.freq*t.hours*t.people;            // 月間工数(h)
-  const impact=Math.min(100, Math.round(Math.log1p(H)/Math.log1p(400)*100)); // 対数正規化
+  const H=t.freq*t.hours*t.people;                         // 月間工数(h)
+  const volScore=Math.round(Math.log1p(H)/Math.log1p(maxH)*100); // 工数インパクト(対数)
+  const critScore=Math.round(t.crit/5*100);                // 重要度インパクト
+  const impact=Math.round(0.55*volScore+0.45*critScore);   // ★頻度だけでなく重要度も加味
   const red=SOL_RED[t.sol];
-  const savedM=H*red/100, savedY=savedM*12, yen=Math.round(savedY*RATE/10000);
-  const priority=(0.5*impact+0.5*t.feas);
-  const quad = impact>=50 ? (t.feas>=50?"今すぐPoC":"重点投資") : (t.feas>=50?"クイックウィン":"見送り候補");
-  return {...t, H, impact, red, savedM, savedY, yen, priority, quad};
+  const priority=Math.round(0.5*impact+0.5*t.feas);
+  const quad=impact>=50?(t.feas>=50?"今すぐPoC":"重点投資"):(t.feas>=50?"クイックウィン":"見送り候補");
+  return {...t, H, volScore, critScore, impact, red, priority, quad};
 }
 const DATA=TASKS.map(enrich).sort((a,b)=>b.priority-a.priority);
-const QCOLOR={"今すぐPoC":"#17a673","重点投資":"#f0a500","クイックウィン":"#4c8bf5","見送り候補":"#9aa5b1"};
 
-function Quadrant({data, sel, onPick}){
-  const W=340,H=280,pad=40;
+function Quadrant({data,sel,onPick}){
+  const W=340,H=290,pad=42;
   const x=v=>pad+v/100*(W-2*pad), y=v=>H-pad-v/100*(H-2*pad);
   return (<svg width="100%" viewBox={"0 0 "+W+" "+H} style={{maxWidth:440}}>
     <rect x={x(50)} y={pad} width={W-pad-x(50)} height={y(50)-pad} fill="#eafaf3"/>
+    <rect x={pad} y={pad} width={x(50)-pad} height={y(50)-pad} fill="#fdf5e6"/>
     <line x1={x(50)} y1={pad} x2={x(50)} y2={H-pad} stroke="#cdd6df" strokeDasharray="4 3"/>
     <line x1={pad} y1={y(50)} x2={W-pad} y2={y(50)} stroke="#cdd6df" strokeDasharray="4 3"/>
-    <text x={W-pad} y={pad+12} textAnchor="end" fontSize="10" fill="#17a673" fontWeight="bold">今すぐPoC</text>
-    <text x={pad+2} y={pad+12} fontSize="10" fill="#f0a500">重点投資</text>
-    <text x={W-pad} y={H-pad-4} textAnchor="end" fontSize="10" fill="#4c8bf5">クイックウィン</text>
-    <text x={pad+2} y={H-pad-4} fontSize="10" fill="#9aa5b1">見送り</text>
+    <text x={W-pad} y={pad+12} textAnchor="end" fontSize="10" fill="#17a673" fontWeight="bold">🟢今すぐPoC</text>
+    <text x={pad+2} y={pad+12} fontSize="10" fill="#f0a500" fontWeight="bold">🟡重点投資</text>
+    <text x={W-pad} y={H-pad-5} textAnchor="end" fontSize="10" fill="#4c8bf5">🔵クイックウィン</text>
+    <text x={pad+2} y={H-pad-5} fontSize="10" fill="#9aa5b1">⚪見送り</text>
     <text x={W/2} y={H-6} textAnchor="middle" fontSize="10" fill="#556">実装容易性 →</text>
     <text x={12} y={H/2} fontSize="10" fill="#556" transform={"rotate(-90 12 "+(H/2)+")"}>← 業務インパクト</text>
-    {data.map((d,i)=>{const r=8+d.H/400*22; const on=i===sel;
+    {data.map((d,i)=>{const r=8+d.H/maxH*20;const on=i===sel;
       return (<g key={i} style={{cursor:"pointer"}} onClick={()=>onPick(i)}>
-        <circle cx={x(d.feas)} cy={y(d.impact)} r={r} fill={QCOLOR[d.quad]} opacity={on?0.95:0.45}
-          stroke={on?"#0f3d78":"none"} strokeWidth="2"/>
-        <text x={x(d.feas)} y={y(d.impact)-r-3} textAnchor="middle" fontSize="10" fontWeight={on?"bold":"normal"} fill="#152238">{d.name}</text>
+        <circle cx={x(d.feas)} cy={y(d.impact)} r={r} fill={QCOLOR[d.quad]} opacity={on?0.95:0.4} stroke={on?"#0f3d78":"none"} strokeWidth="2"/>
+        <text x={x(d.feas)} y={y(d.impact)-r-3} textAnchor="middle" fontSize="9.5" fontWeight={on?"bold":"normal"} fill="#152238">{d.name}</text>
       </g>);})}
   </svg>);
 }
 
 function App(){
   const [sel,setSel]=React.useState(0);
+  const [rate,setRate]=React.useState(3000);
   const d=DATA[sel];
+  const savedM=d.H*d.red/100, savedY=savedM*12, yen=Math.round(savedY*rate/10000);
   const topPoC=DATA.filter(t=>t.quad==="今すぐPoC");
   return (<div className="wrap">
     <h1>AX診断プラットフォーム <span className="sub">業務のAI導入余地を定量診断</span></h1>
-    <div className="sub">対象: サンプル企業(デジタルマーケ部門) / 時給換算 {RATE.toLocaleString()}円</div>
+    <div style={{margin:"6px 0"}}><span className="rate">人件費(時給) <input type="number" value={rate} onChange={e=>setRate(Number(e.target.value)||0)}/> 円/h</span>
+      <span className="sub"> ← この単価で金額換算します(変更可)</span></div>
 
     <div className="card" style={{display:"flex",gap:20,flexWrap:"wrap",alignItems:"flex-start"}}>
       <div><h2>優先度マップ（影響 × 容易性）</h2>
-        <p className="sub">右上＝影響も容易性も高い＝<b style={{color:"#17a673"}}>今すぐPoC</b>。円の大きさ＝月間工数。クリックで詳細。</p>
-        <Quadrant data={DATA} sel={sel} onPick={setSel}/></div>
+        <p className="sub">円の大きさ＝月間工数。クリックで詳細。</p>
+        <Quadrant data={DATA} sel={sel} onPick={setSel}/>
+        <div className="legend">
+          <span><b style={{background:"#17a673"}}></b>今すぐPoC</span><span><b style={{background:"#f0a500"}}></b>重点投資</span>
+          <span><b style={{background:"#4c8bf5"}}></b>クイックウィン</span><span><b style={{background:"#9aa5b1"}}></b>見送り</span>
+        </div>
+        <div className="sub">🟢緑=影響も容易性も高い(最優先) / 🟡黄=影響は高いが難しい(計画的に)</div>
+      </div>
       <div style={{flex:1,minWidth:250}}>
         <div className="ai"><b>🤖 AI講評</b><br/>
-          今すぐPoC候補は <b>{topPoC.map(t=>t.name).join("・")}</b>。最優先は <b>{DATA[0].name}</b>（優先度{DATA[0].priority.toFixed(0)}）で、
-          月間{DATA[0].H}時間の作業を{DATA[0].sol}で約{DATA[0].red}%削減 → <b>年 約{DATA[0].yen}万円</b>の削減見込み。
-          まず{DATA[0].name}を{DATA[0].effMin}〜{DATA[0].effMax}人日のPoCで実証するのが投資対効果最大です。</div>
+          今すぐPoC候補は <b>{topPoC.map(t=>t.name).join("・")}</b>。最優先は <b>{DATA[0].name}</b>(優先度{DATA[0].priority})。
+          {DATA[0].name}を{DATA[0].sol}で約{DATA[0].red}%削減すると、時給{rate.toLocaleString()}円換算で年 約{Math.round(DATA[0].freq*DATA[0].hours*DATA[0].people*DATA[0].red/100*12*rate/10000)}万円の削減見込みです。</div>
       </div>
     </div>
 
     <div className="card">
-      <h2>優先度ランキング（クリックで根拠を表示）</h2>
-      <table><thead><tr><th>業務</th><th>優先度</th><th>影響</th><th>容易性</th><th>月間工数</th><th>判定</th></tr></thead>
+      <h2>優先度ランキング（クリックで根拠表示）</h2>
+      <p className="sub">影響 = <b>工数</b>(頻度×時間×人数) と <b>重要度</b>(1件の重み) の両方から算出。<b>頻度が低くても重要度が高ければ上位</b>になります。</p>
+      <table><thead><tr><th className="f">業務</th><th>優先度</th><th>影響</th><th>├ 工数</th><th>├ 重要度</th><th>容易性</th><th>月間工数</th><th>判定</th></tr></thead>
         <tbody>{DATA.map((t,i)=>(<tr key={i} className={"clk"+(i===sel?" sel":"")} onClick={()=>setSel(i)}>
-          <td><b>{t.name}</b></td><td><b>{t.priority.toFixed(1)}</b></td><td>{t.impact}</td><td>{t.feas}</td>
-          <td>{t.H}h/月</td>
+          <td className="f"><b>{t.name}</b></td><td><b>{t.priority}</b></td><td>{t.impact}</td>
+          <td className="muted">{t.volScore}</td><td className="muted">{t.critScore}</td><td>{t.feas}</td><td>{t.H}h</td>
           <td><span className="pill" style={{background:QCOLOR[t.quad]+"22",color:QCOLOR[t.quad]}}>{t.quad}</span></td></tr>))}
         </tbody></table>
     </div>
 
     <div className="card">
-      <h2>「{d.name}」がなぜ {d.quad} なのか — 根拠</h2>
+      <h2>「{d.name}」の判定根拠</h2>
       <div className="kv">
-        <div>判定ロジック: <b>影響 {d.impact}{d.impact>=50?"≥50":"<50"}</b> かつ <b>容易性 {d.feas}{d.feas>=50?"≥50":"<50"}</b> → <b style={{color:QCOLOR[d.quad]}}>{d.quad}</b></div>
-      </div>
-      <div className="kv">
-        <div>■ 影響 {d.impact} の内訳: 月間頻度 <b>{d.freq}回</b> × 1回 <b>{d.hours}h</b> × <b>{d.people}人</b> = 月間 <b>{d.H} 時間</b></div>
-      </div>
-      <div className="kv">
-        <div>■ 容易性 {d.feas} の内訳: 既存API <b>{d.api}</b> / データ形式 <b>{d.data}</b> / 連携システム <b>{d.integ}件</b></div>
+        <div>判定: <span className="pill" style={{background:QCOLOR[d.quad]+"22",color:QCOLOR[d.quad]}}>{d.quad}</span> — {QDESC[d.quad]}（影響{d.impact}{d.impact>=50?"≥50":"<50"} × 容易性{d.feas}{d.feas>=50?"≥50":"<50"}）</div>
+        <div>■ 影響 {d.impact} の内訳: <b>工数インパクト {d.volScore}</b>(月{d.H}h = {d.freq}回×{d.hours}h×{d.people}人) ＋ <b>重要度インパクト {d.critScore}</b>(重要度 {d.crit}/5)</div>
+        <div className="muted" style={{marginLeft:12}}>重要度の理由: {d.critWhy}</div>
+        <div>■ 容易性 {d.feas}: 既存API <b>{d.api}</b> / データ形式 <b>{d.data}</b> / 連携 <b>{d.integ}件</b></div>
       </div>
 
-      <h3 style={{margin:"12px 0 6px"}}>削減率 {d.red}% の具体的な計算根拠</h3>
+      <h3>年間 約{yen}万円 の削減内訳（何を・どれだけ・いくら）</h3>
       <div className="calc">
-        <div className="eq">現状の月間工数 = {d.freq}回 × {d.hours}h × {d.people}人 = <b>{d.H} 時間/月</b></div>
-        <div className="eq">推奨ソリューション「{d.sol}」の想定削減率 = <b>{d.red}%</b>（定型度・データ入手性から算出した類型別 想定値）</div>
-        <div className="eq">月間削減 = {d.H}h × {d.red}% = <b>{d.savedM.toFixed(0)} 時間/月</b></div>
-        <div className="eq">年間削減 = {d.savedM.toFixed(0)}h × 12 = <b>{d.savedY.toFixed(0)} 時間/年</b></div>
-        <div className="eq">金額換算(時給{RATE.toLocaleString()}円) = {d.savedY.toFixed(0)}h × {RATE.toLocaleString()}円 = <span className="big">年 約 {d.yen} 万円</span></div>
+        <div className="eq">① 現状:人がやっている総時間 = {d.freq}回/月 × {d.hours}h × {d.people}人 = <b>{d.H} 時間/月</b></div>
+        <div className="eq">② 削減対象:この工数の定型部分 → 「{d.sol}」で <b>{d.red}%</b> を自動化(類型別の想定削減率)</div>
+        <div className="eq">③ 月間削減 = {d.H}h × {d.red}% = <b>{savedM.toFixed(0)} 時間/月</b></div>
+        <div className="eq">④ 年間削減 = {savedM.toFixed(0)}h × 12ヶ月 = <b>{savedY.toFixed(0)} 時間/年</b></div>
+        <div className="eq">⑤ 人件費換算 = {savedY.toFixed(0)}h × 時給 {rate.toLocaleString()}円 = <span className="big">年 約 {yen} 万円</span></div>
         <div className="eq muted">PoC概算工数 = {d.effMin}〜{d.effMax} 人日</div>
       </div>
-      <p className="note">※削減率は{d.sol}類型の「想定値」です（実測ではありません）。PoCで実測し、単価・件数は管理画面設定で調整してください。</p>
+      <p className="note">※削減率{d.red}%は「{d.sol}」類型の想定値(実測ではない)。時給は上部で変更可。PoCで実測してください。</p>
     </div>
   </div>);
 }
